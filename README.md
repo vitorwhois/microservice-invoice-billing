@@ -40,21 +40,66 @@ Microsserviço para gestão de produtos e emissão de notas fiscais com controle
 ## Estrutura Básica do Projeto
 ```bash
 /project-root
-  /estoque
-    /cmd
-      main.go
-    /internal
-      /domain      
-      /handler    
-      /repository  
-  /faturamento
-    /cmd
-      main.go
-    /internal
-      /domain      
-      /handler    
-      /repository  
-  docker-compose.yml 
+│
+├── billing-service/
+│   ├── cmd/
+│   │   └── main.go
+│   └── internal/
+│       ├── domain/
+│       │   ├── invoice/
+│       │   │   ├── invoice.go
+│       │   │   ├── item.go
+│       │   │   ├── status.go
+│       │   │   └── repository.go
+│       │   └── errors/
+│       ├── application/
+│       │   ├── commands/
+│       │   │   ├── create_invoice.go
+│       │   │   └── print_invoice.go
+│       │   ├── queries/
+│       │   └── services/
+│       ├── infrastructure/
+│       │   ├── persistence/
+│       │   └── http/
+│       │       ├── handlers/
+│       │       └── routes/
+│       └── shared/
+│
+├── inventory-service/
+│   ├── cmd/
+│   │   └── main.go
+│   └── internal/
+│       ├── domain/
+│       │   └── product/
+│       │       ├── entity.go
+│       │       ├── repository.go
+│       │       ├── errors.go
+│       │       └── value_objects.go
+│       ├── application/
+│       │   ├── dto/
+│       │   │   └── product_dto.go
+│       │   ├── commands/
+│       │   │   ├── create_product.go
+│       │   │   ├── reserve_stock.go
+│       │   │   └── confirm_stock.go
+│       │   └── queries/
+│       │       └── get_product.go
+│       └── infrastructure/
+│           ├── persistence/
+│           │   └── postgres/
+│           │       └── product_repository.go
+│           └── http/
+│               ├── handlers/
+│               │   └── product_handler.go
+│               └── routes/
+│                   └── routes.go
+│
+├── shared/
+│   ├── messaging/
+│   └── utils/
+│
+├── docker-compose.yml
+└── README.md
 ```
 
 ## Tecnologias
