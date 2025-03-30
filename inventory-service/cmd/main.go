@@ -1,24 +1,31 @@
-// cmd/main.go
 package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"inventory-service/internal/application/product"
+	"inventory-service/internal/config"
 	"inventory-service/internal/infrastructure/http/handlers"
+	"inventory-service/internal/infrastructure/http/routes"
 	"inventory-service/internal/infrastructure/persistence"
 
-	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	db, err := setupDatabase()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Erro ao carregar configuração: %v", err)
+	}
+
+	db, err := setupDatabase(cfg)
+	if err != nil {
+		log.Fatalf("Falha ao conectar no banco de dados: %v", err)
 	}
 	defer db.Close()
 
@@ -26,29 +33,31 @@ func main() {
 	productService := product.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productService)
 
-	router := mux.NewRouter()
-	router.HandleFunc("/products", productHandler.Create).Methods("POST")
-	router.HandleFunc("/products/{id}/reserve-stock", productHandler.ReserveStock).Methods("POST")
-	router.HandleFunc("/products/{id}/confirm-stock", productHandler.ConfirmStock).Methods("POST")
-	router.HandleFunc("/products/{id}/cancel-reserve", productHandler.CancelReservation).Methods("POST")
+	router := routes.NewRouter(productHandler)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%s", cfg.Server.Port),
+		Handler:      router,
+		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,
 	}
 
-	log.Printf("Server running on port %s", port)
-	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	log.Printf("Servidor rodando na porta %s", cfg.Server.Port)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("Falha no servidor: %v", err)
 	}
 }
 
-func setupDatabase() (*sql.DB, error) {
+func setupDatabase(cfg *config.Config) (*sql.DB, error) {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
-		connStr = "host=localhost user=postgres password=postgres dbname=inventory sslmode=disable"
+		connStr = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			cfg.Database.Host,
+			cfg.Database.Port,
+			cfg.Database.User,
+			cfg.Database.Password,
+			cfg.Database.Name)
 	}
-
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err

@@ -1,6 +1,11 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"log"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
+)
 
 type Config struct {
 	Database DatabaseConfig
@@ -22,8 +27,19 @@ type ServerConfig struct {
 }
 
 func Load() (*Config, error) {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Aviso: Arquivo .env não encontrado ou não pôde ser carregado, usando variáveis do ambiente")
+	}
+
 	viper.AutomaticEnv()
+
 	viper.SetDefault("DB_HOST", "localhost")
+	viper.SetDefault("DB_PORT", "5432")
+	viper.SetDefault("DB_USER", "postgres")
+	viper.SetDefault("DB_PASSWORD", "postgres")
+	viper.SetDefault("DB_NAME", "inventory")
+	viper.SetDefault("SERVER_PORT", "8080")
 
 	return &Config{
 		Database: DatabaseConfig{
@@ -34,7 +50,7 @@ func Load() (*Config, error) {
 			Name:     viper.GetString("DB_NAME"),
 		},
 		Server: ServerConfig{
-			Port:         viper.GetString("PORT"),
+			Port:         viper.GetString("SERVER_PORT"),
 			ReadTimeout:  15,
 			WriteTimeout: 15,
 		},
