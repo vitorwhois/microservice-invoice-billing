@@ -65,38 +65,22 @@ Microsserviço para gestão de produtos e emissão de notas fiscais com controle
 │       │       └── routes/
 │       └── shared/
 │
-├── inventory-service/
-│   ├── cmd/
-│   │   └── main.go
-│   └── internal/
-│       ├── domain/
-│       │   └── product/
-│       │       ├── entity.go
-│       │       ├── repository.go
-│       │       ├── errors.go
-│       │       └── value_objects.go
-│       ├── application/
-│       │   ├── dto/
-│       │   │   └── product_dto.go
-│       │   ├── commands/
-│       │   │   ├── create_product.go
-│       │   │   ├── reserve_stock.go
-│       │   │   └── confirm_stock.go
-│       │   └── queries/
-│       │       └── get_product.go
-│       └── infrastructure/
-│           ├── persistence/
-│           │   └── postgres/
-│           │       └── product_repository.go
-│           └── http/
-│               ├── handlers/
-│               │   └── product_handler.go
-│               └── routes/
-│                   └── routes.go
-│
-├── shared/
-│   ├── messaging/
-│   └── utils/
+├──inventory-service/
+│   ├──cmd/
+│   └── main.go                
+├──internal/
+│   ├──domain/
+│   │   └──product/             
+│   │       ├── product.go       
+│   │       └── repository.go    
+│   ├── infrastructure/
+│   │   ├── persistence/        
+│   │   │   └── postgres.go
+│   │   └── http/               
+│   │       └── handlers.go
+│   └── application/          
+│       └── product/
+│           └── service.go     
 │
 ├── docker-compose.yml
 └── README.md
