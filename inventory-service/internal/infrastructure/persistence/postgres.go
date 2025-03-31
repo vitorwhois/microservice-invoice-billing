@@ -41,6 +41,36 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id int) (*product.Prod
 	return p, err
 }
 
+func (r *PostgresRepository) GetAll(ctx context.Context) ([]*product.Product, error) {
+	query := `
+        SELECT id, name, price, stock, reserved_stock, version, created_at
+        FROM products
+        ORDER BY created_at DESC`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	products := make([]*product.Product, 0)
+	for rows.Next() {
+		p := &product.Product{}
+		if err := rows.Scan(
+			&p.ID, &p.Name, &p.Price, &p.Stock, &p.ReservedStock, &p.Version, &p.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		products = append(products, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
 func (r *PostgresRepository) Update(ctx context.Context, p *product.Product) error {
 	query := `
         UPDATE products 

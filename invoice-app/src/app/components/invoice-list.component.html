@@ -1,0 +1,47 @@
+<div>
+  <h3>Criar Nota Fiscal</h3>
+  <input type="text" [(ngModel)]="newInvoiceNumber" placeholder="Número da nota">
+  <button (click)="createInvoice()">Criar Nota</button>
+</div>
+
+<h2>Listagem de Notas</h2>
+<ul>
+  <li *ngFor="let invoice of invoices">
+    Nota #{{ invoice.Number }} - Status: {{ invoice.Status }}
+    <button (click)="openAddItemModal(invoice.ID)">Adicionar Item</button>
+  </li>
+</ul>
+
+<div *ngIf="showModal" class="modal">
+  <div class="modal-content">
+    <h3>Adicionar Item à Nota #{{ selectedInvoiceId }}</h3>
+    <label>Produto ID:</label>
+    <input type="number" [(ngModel)]="productId">
+    <label>Quantidade:</label>
+    <input type="number" [(ngModel)]="quantity">
+    <button (click)="addItemToInvoice(selectedInvoiceId, productId, quantity)">Adicionar</button>
+    <button (click)="showModal = false">Fechar</button>
+  </div>
+</div>
+
+<div>
+  <h3>Listagem de Notas para confirmar</h3>
+  <ul>
+    <li *ngFor="let invoice of invoices">
+      Nota #{{ invoice.Number }} - Status: {{ invoice.Status }}
+      <div *ngIf="invoice.Items && invoice.Items.length > 0">
+        <strong>Itens:</strong>
+        <ul>
+          <li *ngFor="let item of invoice.Items">
+            {{ item.Name }} - Quantidade: {{ item.Quantity }} - Preço: {{ item.Price | currency }}
+          </li>
+        </ul>
+        <div><strong>Valor Total:</strong> {{ invoice.TotalValue | currency }}</div>
+      </div>
+      <div *ngIf="!invoice.Items || invoice.Items.length === 0">
+        <strong>Sem itens cadastrados</strong>
+      </div>
+      <button (click)="printInvoice(invoice.ID)">Imprimir Nota</button>
+    </li>
+  </ul>
+</div>

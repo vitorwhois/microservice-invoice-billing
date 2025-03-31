@@ -78,3 +78,6 @@ func (s *Service) GetProductByID(ctx context.Context, id int) (*product.Product,
 	}
 	return product, nil
 }
+func (s *Service) GetAllProducts(ctx context.Context) ([]*product.Product, error) {
+	return s.repo.GetAll(ctx)
+}

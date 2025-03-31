@@ -1,17 +1,16 @@
 <div class="app-container">
   <h1>Sistema de Notas Fiscais</h1>
-
   <div class="content-grid">
     <div class="panel">
+      <h2>Produtos</h2>
       <app-product-list></app-product-list>
     </div>
-
     <div class="panel">
-      <app-invoice-detail></app-invoice-detail>
+      <h2>Notas Fiscais</h2>
+      <app-invoice-list (invoiceSelected)="setInvoice($event)"></app-invoice-list>
     </div>
-
-<!--     <div class="panel" *ngIf="loadInvoice">
-      <app-invoice-detail [invoice]="selectedInvoice"></app-invoice-detail>
-    </div> -->
+  </div>
+  <div class="detail-panel" *ngIf="selectedInvoice">
+    <app-invoice-detail [invoice]="selectedInvoice"></app-invoice-detail>
   </div>
 </div>

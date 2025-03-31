@@ -12,29 +12,30 @@ export class InvoiceDetailComponent {
   constructor(private billingService: BillingService) { }
 
   addItem() {
-    this.billingService.addItemToInvoice(
-      this.invoice.ID,
-      this.newItem.productId,
-      this.newItem.quantity
-    ).subscribe({
-      next: () => this.loadInvoice(),
-      error: (err) => alert('Erro: ' + err.error)
-    });
+    if (!this.newItem.productId || !this.newItem.quantity) {
+      alert('Informe o ID do produto e a quantidade');
+      return;
+    }
+    this.billingService.addItemToInvoice(this.invoice.ID, this.newItem.productId, this.newItem.quantity)
+      .subscribe({
+        next: () => this.loadInvoice(),
+        error: (err) => alert('Erro ao adicionar item: ' + err.error)
+      });
   }
 
   printInvoice() {
-    this.billingService.printInvoice(this.invoice.ID).subscribe({
-      next: () => {
-        alert('Nota impressa com sucesso!');
-        this.loadInvoice();
-      },
-      error: (err) => alert('Erro: ' + err.error)
-    });
+    this.billingService.printInvoice(this.invoice.ID)
+      .subscribe({
+        next: (response) => {
+          alert('Nota impressa com sucesso!');
+          this.loadInvoice();
+        },
+        error: (err) => alert('Erro ao imprimir: ' + err.error)
+      });
   }
 
   private loadInvoice() {
-    this.billingService.getInvoice(this.invoice.ID).subscribe(invoice => {
-      this.invoice = invoice;
-    });
+    this.billingService.getInvoice(this.invoice.ID)
+      .subscribe(invoice => this.invoice = invoice);
   }
 }

@@ -161,6 +161,28 @@ func (r *PostgresRepository) List(ctx context.Context) ([]*invoice.Invoice, erro
 		if err := rows.Scan(&inv.ID, &inv.Number, &inv.Status, &inv.CreatedAt, &inv.ClosedAt, &inv.TotalValue); err != nil {
 			return nil, err
 		}
+
+		itemsQuery := `
+			SELECT id, product_id, quantity, price, name
+			FROM invoice_items
+			WHERE invoice_id = $1`
+
+		itemRows, err := r.db.QueryContext(ctx, itemsQuery, inv.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		inv.Items = make([]*invoice.InvoiceItem, 0)
+		for itemRows.Next() {
+			item := &invoice.InvoiceItem{InvoiceID: inv.ID}
+			if err := itemRows.Scan(&item.ID, &item.ProductID, &item.Quantity, &item.Price, &item.Name); err != nil {
+				itemRows.Close()
+				return nil, err
+			}
+			inv.Items = append(inv.Items, item)
+		}
+		itemRows.Close()
+
 		invoices = append(invoices, inv)
 	}
 

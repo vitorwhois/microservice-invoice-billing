@@ -15,6 +15,8 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -44,8 +46,15 @@ func main() {
 
 	router.Use(loggingMiddleware)
 
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
+	})
+	handler := c.Handler(router)
+
 	srv := &http.Server{
-		Handler:      router,
+		Handler:      handler,
 		Addr:         ":" + getPort(),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

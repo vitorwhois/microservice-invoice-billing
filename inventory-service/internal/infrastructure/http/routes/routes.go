@@ -9,6 +9,7 @@ import (
 func NewRouter(productHandler *handlers.ProductHandler) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/products", productHandler.Create).Methods("POST")
+	router.HandleFunc("/products", productHandler.GetAllProducts).Methods("GET")
 	router.HandleFunc("/products/{id}/reserve-stock", productHandler.ReserveStock).Methods("POST")
 	router.HandleFunc("/products/{id}/confirm-stock", productHandler.ConfirmStock).Methods("POST")
 	router.HandleFunc("/products/{id}/cancel-reserve", productHandler.CancelReservation).Methods("POST")

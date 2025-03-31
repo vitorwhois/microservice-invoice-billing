@@ -1,6 +1,6 @@
 <div class="invoice-card" *ngIf="invoice">
-  <h2>Nota Fiscal #{{invoice.Number}}</h2>
-  <p>Status: {{invoice.Status}}</p>
+  <h3>Nota Fiscal #{{ invoice.Number }}</h3>
+  <p>Status: {{ invoice.Status }}</p>
 
   <div class="add-item">
     <input type="number" [(ngModel)]="newItem.productId" placeholder="ID Produto">
@@ -8,14 +8,14 @@
     <button (click)="addItem()">Adicionar Item</button>
   </div>
 
-  <table>
+  <table *ngIf="invoice.Items && invoice.Items.length">
     <tr *ngFor="let item of invoice.Items">
-      <td>{{item.Name}}</td>
-      <td>{{item.Quantity}} x {{item.Price | currency}}</td>
+      <td>{{ item.Name }}</td>
+      <td>{{ item.Quantity }} x {{ item.Price | currency }}</td>
     </tr>
   </table>
 
   <button (click)="printInvoice()" [disabled]="invoice.Status === 'CLOSED'">
-    {{invoice.Status === 'CLOSED' ? 'Nota Fechada' : 'Imprimir Nota'}}
+    {{ invoice.Status === 'CLOSED' ? 'Nota Fechada' : 'Imprimir Nota' }}
   </button>
 </div>

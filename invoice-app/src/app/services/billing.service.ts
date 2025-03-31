@@ -1,30 +1,35 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class BillingService {
-  private apiUrl = 'http://localhost:8081';
+
+  private baseUrl = 'http://localhost:8081';
 
   constructor(private http: HttpClient) { }
 
-  createInvoice(invoiceNumber: string) {
-    return this.http.post(`${this.apiUrl}/invoices`, { number: invoiceNumber });
+  createInvoice(number: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/invoices`, { number });
   }
 
-  getInvoice(id: number) {
-    return this.http.get(`${this.apiUrl}/invoices/${id}`);
+
+  getInvoices(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/invoices`);
   }
 
-  addItemToInvoice(invoiceId: number, productId: number, quantity: number) {
-    return this.http.post(`${this.apiUrl}/invoices/${invoiceId}/items`, {
-      product_id: productId,
-      quantity: quantity
-    });
+
+  getInvoice(invoiceId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/invoices/${invoiceId}`);
   }
 
-  printInvoice(invoiceId: number) {
-    return this.http.post(`${this.apiUrl}/invoices/${invoiceId}/print`, {});
+
+  addItemToInvoice(invoiceId: number, productId: number, quantity: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/invoices/${invoiceId}/items`, { product_id: productId, quantity });
+  }
+
+
+  printInvoice(invoiceId: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/invoices/${invoiceId}/print`, {});
   }
 }

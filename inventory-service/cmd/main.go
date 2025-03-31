@@ -15,6 +15,8 @@ import (
 	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/infrastructure/persistence"
 
 	_ "github.com/lib/pq"
+
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -35,9 +37,17 @@ func main() {
 
 	router := routes.NewRouter(productHandler)
 
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
+	})
+
+	handler := c.Handler(router)
+
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Server.Port),
-		Handler:      router,
+		Handler:      handler,
 		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,
 	}
