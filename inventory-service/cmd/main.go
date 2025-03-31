@@ -31,8 +31,13 @@ func main() {
 	}
 	defer db.Close()
 
+	failureMode := os.Getenv("INVENTORY_FAILURE_MODE")
+	if failureMode != "" {
+		log.Printf("Running with failure mode: %s", failureMode)
+	}
+
 	productRepo := persistence.NewProductRepository(db)
-	productService := product.NewProductService(productRepo)
+	productService := product.NewProductService(productRepo, failureMode)
 	productHandler := handlers.NewProductHandler(productService)
 
 	router := routes.NewRouter(productHandler)

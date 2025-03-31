@@ -24,6 +24,20 @@ type ProductResponse struct {
 	Price float64 `json:"price"`
 	Stock int     `json:"stock"`
 }
+type RecoveryDetails struct {
+	Attempted  bool     `json:"attempted"`
+	Successful bool     `json:"successful"`
+	Message    string   `json:"message,omitempty"`
+	Details    []string `json:"details,omitempty"`
+}
+
+type InvoiceProcessResult struct {
+	Success      bool            `json:"success"`
+	InvoiceID    int             `json:"invoice_id"`
+	StepReached  string          `json:"step_reached"`
+	FailedReason string          `json:"failed_reason,omitempty"`
+	Recovery     RecoveryDetails `json:"recovery,omitempty"`
+}
 
 var (
 	ErrInventoryService  = errors.New("error communicating with inventory service")
@@ -102,55 +116,90 @@ func (s *Service) AddInvoiceItem(ctx context.Context, invoiceID int, productID i
 	return s.repo.Update(ctx, inv)
 }
 
-func (s *Service) PrintInvoice(ctx context.Context, invoiceID int) error {
+func (s *Service) PrintInvoice(ctx context.Context, invoiceID int) (*InvoiceProcessResult, error) {
 	inv, err := s.repo.GetByID(ctx, invoiceID)
 	log.Printf("Verificando se a fatura %d existe", invoiceID)
 	if err != nil {
 		log.Printf("Fatura %d não existe", invoiceID)
-		return err
+		return nil, err
 	}
 
 	if inv.Status == domaininvoice.StatusClosed {
-		return domaininvoice.ErrAlreadyClosed
+		return nil, domaininvoice.ErrAlreadyClosed
+	}
+
+	// Result object to track what happened during processing
+	result := &InvoiceProcessResult{
+		Success:      false,
+		InvoiceID:    invoiceID,
+		StepReached:  "started",
+		FailedReason: "",
+		Recovery:     RecoveryDetails{Attempted: false, Successful: false},
 	}
 
 	// Start transaction Saga
 	reservedItems := make(map[int]int)
 
 	// Step 1: Reserve stock for all items
+	result.StepReached = "stock_reservation"
 	for _, item := range inv.Items {
 		if err := s.reserveStock(ctx, item.ProductID, item.Quantity); err != nil {
 			// Compensating transaction: Cancel all reservations
+			result.FailedReason = fmt.Sprintf("Failed to reserve stock for product %d: %v", item.ProductID, err)
+			result.Recovery.Attempted = true
+			result.Recovery.Message = "Attempting to cancel existing reservations"
+
+			// Cancel previous reservations
 			for prodID, qty := range reservedItems {
+				result.Recovery.Details = append(result.Recovery.Details,
+					fmt.Sprintf("Canceling reservation for product %d, quantity %d", prodID, qty))
 				s.cancelReservation(ctx, prodID, qty)
 			}
-			return err
+
+			result.Recovery.Successful = true
+			return result, err
 		}
 		reservedItems[item.ProductID] = item.Quantity
 	}
 
 	// Step 2: Confirm all reservations
+	result.StepReached = "stock_confirmation"
 	for prodID, qty := range reservedItems {
 		if err := s.confirmStock(ctx, prodID, qty); err != nil {
 			// If confirming fails, cancel remaining reservations and try to restore confirmed ones
-			log.Printf("Erro ao confirmar reserva de estoque para o produto %d", prodID)
+			result.FailedReason = fmt.Sprintf("Failed to confirm stock for product %d: %v", prodID, err)
+			result.Recovery.Attempted = true
+			result.Recovery.Message = "Attempting to cancel remaining reservations"
+
+			log.Printf("Erro ao confirmar reserva de estoque para o produto %d", prodID, err)
 			for pID, q := range reservedItems {
 				if pID != prodID {
+					result.Recovery.Details = append(result.Recovery.Details,
+						fmt.Sprintf("Canceling reservation for product %d, quantity %d", pID, q))
 					log.Printf("Cancelando reserva de estoque para o produto %d", pID)
 					s.cancelReservation(ctx, pID, q)
-
 				}
 			}
-			return err
+
+			result.Recovery.Successful = true
+			return result, err
 		}
 	}
 
 	// 3: Close invoice
+	result.StepReached = "invoice_closing"
 	if err := inv.Close(); err != nil {
-		return err
+		result.FailedReason = fmt.Sprintf("Failed to close invoice: %v", err)
+		return result, err
 	}
 
-	return s.repo.Update(ctx, inv)
+	if err := s.repo.Update(ctx, inv); err != nil {
+		result.FailedReason = fmt.Sprintf("Failed to update invoice in database: %v", err)
+		return result, err
+	}
+
+	result.Success = true
+	return result, nil
 }
 
 func (s *Service) getProductFromInventory(ctx context.Context, productID int, quantity int) (*ProductResponse, error) {

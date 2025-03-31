@@ -112,6 +112,8 @@ func (h *InvoiceHandler) AddInvoiceItem(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(inv)
 }
 
+// billing-service/internal/infrastructure/http/handlers/handlers.go
+
 func (h *InvoiceHandler) PrintInvoice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	log.Printf("Recebendo requisição para invoice ID: %v", vars["id"])
@@ -121,8 +123,27 @@ func (h *InvoiceHandler) PrintInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.PrintInvoice(r.Context(), id)
+	result, err := h.service.PrintInvoice(r.Context(), id)
 	if err != nil {
+		// We still have the result object with recovery details
+		if result != nil {
+			// Use a different status code based on the error
+			statusCode := http.StatusInternalServerError
+
+			if err == domaininvoice.ErrAlreadyClosed {
+				statusCode = http.StatusConflict
+			} else if err == appinvoice.ErrStockReservation {
+				statusCode = http.StatusConflict
+			}
+
+			// Return the detailed result even though there was an error
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(statusCode)
+			json.NewEncoder(w).Encode(result)
+			return
+		}
+
+		// Handle the case where we don't even have a result object
 		if err == domaininvoice.ErrAlreadyClosed {
 			http.Error(w, "Invoice is already closed", http.StatusConflict)
 		} else if err == appinvoice.ErrStockReservation {
@@ -133,15 +154,18 @@ func (h *InvoiceHandler) PrintInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return success with the updated invoice
+	// If successful, get the updated invoice
 	inv, _ := h.service.GetInvoiceByID(r.Context(), id)
 
+	// Combine the result with the invoice data
 	response := struct {
-		Message string                 `json:"message"`
-		Invoice *domaininvoice.Invoice `json:"invoice"`
+		Message     string                           `json:"message"`
+		Invoice     *domaininvoice.Invoice           `json:"invoice"`
+		ProcessInfo *appinvoice.InvoiceProcessResult `json:"process_info"`
 	}{
-		Message: "Invoice printed successfully",
-		Invoice: inv,
+		Message:     "Invoice printed successfully",
+		Invoice:     inv,
+		ProcessInfo: result,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

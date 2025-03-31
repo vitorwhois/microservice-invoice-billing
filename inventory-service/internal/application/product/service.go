@@ -2,17 +2,22 @@ package product
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/domain/product"
 )
 
 type Service struct {
-	repo product.Repository
+	repo        product.Repository
+	failureMode string
 }
 
-func NewProductService(repo product.Repository) *Service {
-	return &Service{repo: repo}
+func NewProductService(repo product.Repository, failureMode string) *Service {
+	return &Service{
+		repo:        repo,
+		failureMode: failureMode,
+	}
 }
 
 func (s *Service) CreateProduct(ctx context.Context, name string, price float64, stock int) (*product.Product, error) {
@@ -31,6 +36,12 @@ func (s *Service) CreateProduct(ctx context.Context, name string, price float64,
 
 func (s *Service) ReserveStock(ctx context.Context, id int, quantity int) error {
 	log.Printf("Reserving stock for product %d", id)
+
+	if s.failureMode == "reserve" {
+		log.Printf("Simulating failure in ReserveStock for product %d", id)
+		return errors.New("simulated failure in stock reservation")
+	}
+
 	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		log.Printf("Product %d not found", id)
@@ -46,6 +57,12 @@ func (s *Service) ReserveStock(ctx context.Context, id int, quantity int) error 
 }
 
 func (s *Service) ConfirmStock(ctx context.Context, id int, quantity int) error {
+
+	if s.failureMode == "confirm" {
+		log.Printf("Simulating failure in ConfirmStock for product %d", id)
+		return errors.New("simulated failure in stock confirmation")
+	}
+
 	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return err

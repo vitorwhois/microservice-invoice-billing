@@ -74,9 +74,28 @@ export class InvoiceListComponent implements OnInit {
     this.billingService.printInvoice(invoiceId)
       .subscribe({
         next: () => alert('Nota impressa com sucesso!'),
-        error: (err) => alert('Erro ao imprimir: ' + err.error)
+        error: (err) => {
+          if (err.error) {
+            const { step_reached, failed_reason, recovery } = err.error;
+
+            let message = `Erro ao imprimir a nota fiscal.\n`;
+            message += `Etapa com falha: ${step_reached}\n`;
+            message += `Motivo: ${failed_reason}\n`;
+
+            if (recovery?.attempted) {
+              message += `Recuperação: ${recovery.message} \n`;
+              message += recovery.successful ? 'Recuperação bem-sucedida!' : 'A recuperação falhou!';
+            }
+
+            alert(message);
+          } else {
+            alert('Erro ao imprimir a nota fiscal. Tente novamente mais tarde.');
+          }
+        }
       });
   }
+
+
 
   openAddItemModal(invoiceId: number): void {
     this.selectedInvoiceId = invoiceId;
