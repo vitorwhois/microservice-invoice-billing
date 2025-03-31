@@ -186,7 +186,21 @@ func (s *Service) PrintInvoice(ctx context.Context, invoiceID int) (*InvoiceProc
 		}
 	}
 
-	// 3: Close invoice
+	// Step 3: Cancel reservations before closing invoice
+	result.StepReached = "cancel_stock_reservation"
+	for prodID, qty := range reservedItems {
+		log.Printf("Cancelando reserva de estoque para o produto %d, quantidade %d", prodID, qty)
+		if err := s.cancelReservation(ctx, prodID, qty); err != nil {
+			log.Printf("Failed to cancel reservation for product %d: %v", prodID, err)
+			result.FailedReason = fmt.Sprintf("Error canceling reservation for product %d: %v", prodID, err)
+			result.Recovery.Attempted = true
+			result.Recovery.Details = append(result.Recovery.Details,
+				fmt.Sprintf("Failed to cancel reservation for product %d", prodID))
+			return result, err
+		}
+	}
+
+	// 4: Close invoice
 	result.StepReached = "invoice_closing"
 	if err := inv.Close(); err != nil {
 		result.FailedReason = fmt.Sprintf("Failed to close invoice: %v", err)
@@ -287,7 +301,7 @@ func (s *Service) confirmStock(ctx context.Context, productID int, quantity int)
 }
 
 func (s *Service) cancelReservation(ctx context.Context, productID int, quantity int) error {
-	url := fmt.Sprintf("%s/products/%d/cancel", s.inventoryServiceURL, productID)
+	url := fmt.Sprintf("%s/products/%d/cancel-reserve", s.inventoryServiceURL, productID)
 	log.Printf("Cancelando reserva de estoque para o produto %d", productID)
 	if quantity <= 0 {
 		return ErrInvalidQuantity

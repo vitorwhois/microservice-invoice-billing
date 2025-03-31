@@ -40,11 +40,13 @@ func NewProduct(name string, price float64, stock int) (*Product, error) {
 func (p *Product) ReserveStock(quantity int) error {
 	availableStock := p.Stock - p.ReservedStock
 	if quantity > availableStock {
-		log.Printf("Insufficient stock for product %d", p.ID)
+		log.Printf("Insufficient stock for product %d, requested %d, available %d", p.ID, quantity, availableStock)
 		return ErrInsufficientStock
 	}
+
 	p.ReservedStock += quantity
 	p.Version++
+
 	return nil
 }
 

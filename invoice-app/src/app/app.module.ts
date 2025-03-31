@@ -3,9 +3,9 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
-import { InvoiceListComponent } from './components/invoice-list.component';
-import { InvoiceDetailComponent } from './components/invoice-detail.component';
-import { ProductListComponent } from './components/product-list.component';
+import { InvoiceListComponent } from './components/invoice/invoice-list.component';
+import { InvoiceDetailComponent } from './components/invoice/invoice-detail.component';
+import { ProductListComponent } from './components/product/product-list.component';
 
 
 @NgModule({

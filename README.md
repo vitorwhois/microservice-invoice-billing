@@ -100,6 +100,11 @@ Microsserviço para gestão de produtos e emissão de notas fiscais com controle
 - Docker e Docker Compose
 - PostgreSQL 13+
 
+### Melhorias Futuras
+- Adicionar Circuit Breaker para chamadas entre serviços
+- Mensageria para comunicação e filas com RabbitMq ou Kafka
+- Implementar Dead Letter Queue para retry de falhas
+
 
 ### 1. Clonar repositório
 ```bash
@@ -111,3 +116,4 @@ cd billing-invoice-service-teste
 ```bash
 docker-compose up --build 
 ```
+

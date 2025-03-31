@@ -1,6 +1,6 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
-import { BillingService } from '../services/billing.service';
-import { InventoryService } from '../services/inventory.services';
+import { BillingService } from '../../services/billing.service';
+import { InventoryService } from '../../services/inventory.services';
 
 @Component({
   selector: 'app-invoice-list',
@@ -81,6 +81,7 @@ export class InvoiceListComponent implements OnInit {
             let message = `Erro ao imprimir a nota fiscal.\n`;
             message += `Etapa com falha: ${step_reached}\n`;
             message += `Motivo: ${failed_reason}\n`;
+            message += 'Erro: ' + err.error;
 
             if (recovery?.attempted) {
               message += `Recuperação: ${recovery.message} \n`;

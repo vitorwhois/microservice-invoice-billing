@@ -35,7 +35,7 @@ func (s *Service) CreateProduct(ctx context.Context, name string, price float64,
 }
 
 func (s *Service) ReserveStock(ctx context.Context, id int, quantity int) error {
-	log.Printf("Reserving stock for product %d", id)
+	log.Printf("Reserving stock for product %d e quantity %d", id, quantity)
 
 	if s.failureMode == "reserve" {
 		log.Printf("Simulating failure in ReserveStock for product %d", id)
