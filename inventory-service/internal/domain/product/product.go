@@ -2,6 +2,7 @@ package product
 
 import (
 	"errors"
+	"log"
 	"time"
 )
 
@@ -39,6 +40,7 @@ func NewProduct(name string, price float64, stock int) (*Product, error) {
 func (p *Product) ReserveStock(quantity int) error {
 	availableStock := p.Stock - p.ReservedStock
 	if quantity > availableStock {
+		log.Printf("Insufficient stock for product %d", p.ID)
 		return ErrInsufficientStock
 	}
 	p.ReservedStock += quantity

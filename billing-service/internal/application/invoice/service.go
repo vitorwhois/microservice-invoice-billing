@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -29,6 +30,8 @@ var (
 	ErrProductNotFound   = errors.New("product not found")
 	ErrStockReservation  = errors.New("failed to reserve stock")
 	ErrStockConfirmation = errors.New("failed to confirm stock")
+	ErrInsufficientStock = errors.New("insufficient stock")
+	ErrInvalidQuantity   = errors.New("invalid quantity")
 )
 
 func NewInvoiceService(repo domaininvoice.Repository, inventoryURL string) *Service {
@@ -57,6 +60,7 @@ func (s *Service) ListInvoices(ctx context.Context) ([]*domaininvoice.Invoice, e
 func (s *Service) AddInvoiceItem(ctx context.Context, invoiceID int, productID int, quantity int) error {
 	inv, err := s.repo.GetByID(ctx, invoiceID)
 	if err != nil {
+		log.Printf("Fatura %d não existe", invoiceID)
 		return err
 	}
 
@@ -64,19 +68,45 @@ func (s *Service) AddInvoiceItem(ctx context.Context, invoiceID int, productID i
 		return domaininvoice.ErrAlreadyClosed
 	}
 
-	product, err := s.getProductFromInventory(ctx, productID)
+	product, err := s.getProductFromInventory(ctx, productID, quantity)
+	if err != nil {
+		log.Printf("Produto %d nao encontrado", productID)
+		return ErrProductNotFound
+	}
+
+	err = s.reserveStock(ctx, productID, quantity)
+	if err != nil {
+		log.Printf("Erro ao reservar estoque para o produto %d", productID)
+		return ErrStockReservation
+	}
+
+	item := &domaininvoice.InvoiceItem{
+		InvoiceID: invoiceID,
+		ProductID: productID,
+		Quantity:  quantity,
+		Price:     product.Price,
+		Name:      product.Name,
+	}
+
+	if err := s.repo.AddItem(ctx, item); err != nil {
+		return err
+	}
+
+	inv, err = s.repo.GetByID(ctx, invoiceID)
 	if err != nil {
 		return err
 	}
 
-	inv.AddItem(productID, quantity, product.Price, product.Name)
+	log.Printf("Item %d adicionado ao invoice %d", productID, invoiceID)
 
 	return s.repo.Update(ctx, inv)
 }
 
 func (s *Service) PrintInvoice(ctx context.Context, invoiceID int) error {
 	inv, err := s.repo.GetByID(ctx, invoiceID)
+	log.Printf("Verificando se a fatura %d existe", invoiceID)
 	if err != nil {
+		log.Printf("Fatura %d não existe", invoiceID)
 		return err
 	}
 
@@ -103,9 +133,12 @@ func (s *Service) PrintInvoice(ctx context.Context, invoiceID int) error {
 	for prodID, qty := range reservedItems {
 		if err := s.confirmStock(ctx, prodID, qty); err != nil {
 			// If confirming fails, cancel remaining reservations and try to restore confirmed ones
+			log.Printf("Erro ao confirmar reserva de estoque para o produto %d", prodID)
 			for pID, q := range reservedItems {
 				if pID != prodID {
+					log.Printf("Cancelando reserva de estoque para o produto %d", pID)
 					s.cancelReservation(ctx, pID, q)
+
 				}
 			}
 			return err
@@ -120,9 +153,9 @@ func (s *Service) PrintInvoice(ctx context.Context, invoiceID int) error {
 	return s.repo.Update(ctx, inv)
 }
 
-func (s *Service) getProductFromInventory(ctx context.Context, productID int) (*ProductResponse, error) {
+func (s *Service) getProductFromInventory(ctx context.Context, productID int, quantity int) (*ProductResponse, error) {
 	url := fmt.Sprintf("%s/products/%d", s.inventoryServiceURL, productID)
-	log.Printf("Tentando acessar: %s", url)
+	log.Printf("Buscando produto %d no inventário", productID)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -140,50 +173,64 @@ func (s *Service) getProductFromInventory(ctx context.Context, productID int) (*
 
 	var product ProductResponse
 	if err := json.NewDecoder(resp.Body).Decode(&product); err != nil {
+		fmt.Println("Error decoding response from inventory service:", err)
 		return nil, err
 	}
 
+	if product.Stock < quantity {
+		return nil, ErrStockReservation
+	}
+	log.Printf("Produto encontrado: %v", product)
 	return &product, nil
 }
 
 func (s *Service) reserveStock(ctx context.Context, productID int, quantity int) error {
-	url := fmt.Sprintf("%s/products/%d/reserve", s.inventoryServiceURL, productID)
+	url := fmt.Sprintf("%s/products/%d/reserve-stock", s.inventoryServiceURL, productID)
+	requestBody, _ := json.Marshal(map[string]int{"quantity": quantity})
 
-	payload := map[string]int{"quantity": quantity}
-	jsonPayload, _ := json.Marshal(payload)
+	log.Printf("Enviando requisição para reservar estoque: %s, Body: %s", url, string(requestBody))
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if err != nil {
+		log.Println("Erro ao criar requisição:", err)
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Erro ao fazer requisição para reservar estoque:", err)
 		return ErrInventoryService
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var errResponse map[string]string
-		json.NewDecoder(resp.Body).Decode(&errResponse)
-
-		if resp.StatusCode == http.StatusConflict {
-			return ErrStockReservation
-		}
-		return ErrInventoryService
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Falha ao reservar estoque. Status: %d, Response: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("falha ao reservar estoque, status: %d", resp.StatusCode)
 	}
 
+	log.Println("Estoque reservado com sucesso")
 	return nil
 }
 
 func (s *Service) confirmStock(ctx context.Context, productID int, quantity int) error {
-	url := fmt.Sprintf("%s/products/%d/confirm", s.inventoryServiceURL, productID)
+	url := fmt.Sprintf("%s/products/%d/confirm-stock", s.inventoryServiceURL, productID)
+	log.Printf("Confirmando reserva de estoque para o produto %d", productID)
 
 	payload := map[string]int{"quantity": quantity}
 	jsonPayload, _ := json.Marshal(payload)
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
+		fmt.Println("Error making request to inventory service:", err)
 		return ErrInventoryService
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Failed to confirm stock for product %d: %d", productID, resp.StatusCode)
 		return ErrInventoryService
 	}
 
@@ -192,17 +239,21 @@ func (s *Service) confirmStock(ctx context.Context, productID int, quantity int)
 
 func (s *Service) cancelReservation(ctx context.Context, productID int, quantity int) error {
 	url := fmt.Sprintf("%s/products/%d/cancel", s.inventoryServiceURL, productID)
+	log.Printf("Cancelando reserva de estoque para o produto %d", productID)
+	if quantity <= 0 {
+		return ErrInvalidQuantity
+	}
 
 	payload := map[string]int{"quantity": quantity}
 	jsonPayload, _ := json.Marshal(payload)
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
+		fmt.Println("Error making request cancelReservation to inventory service:", err)
 		return ErrInventoryService
 	}
 	defer resp.Body.Close()
 
-	// Even if cancellation fails, we just log it
 	if resp.StatusCode != http.StatusOK {
 		fmt.Printf("Failed to cancel reservation for product %d: %d", productID, resp.StatusCode)
 	}

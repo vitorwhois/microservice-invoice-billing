@@ -48,6 +48,7 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+
 	id, err := strconv.Atoi(vars["id"])
 
 	var request struct {
@@ -66,6 +67,7 @@ func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 
 	err = h.service.ReserveStock(r.Context(), id, request.Quantity)
 	if err != nil {
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

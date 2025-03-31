@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	"log"
 
 	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/domain/product"
 )
@@ -29,12 +30,15 @@ func (s *Service) CreateProduct(ctx context.Context, name string, price float64,
 }
 
 func (s *Service) ReserveStock(ctx context.Context, id int, quantity int) error {
+	log.Printf("Reserving stock for product %d", id)
 	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
+		log.Printf("Product %d not found", id)
 		return err
 	}
 
 	if err := product.ReserveStock(quantity); err != nil {
+		log.Printf("Error reserving stock for product %d: %v", id, err)
 		return err
 	}
 

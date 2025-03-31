@@ -22,6 +22,7 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Erro ao carregar configuração: %v", err)
+		fmt.Println("Billing Service acessando o Inventory Service em:", cfg.InventoryServiceURL)
 	}
 
 	db, err := setupDatabase(cfg)

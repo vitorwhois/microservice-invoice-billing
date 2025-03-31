@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -42,6 +43,7 @@ func (h *InvoiceHandler) CreateInvoice(w http.ResponseWriter, r *http.Request) {
 
 func (h *InvoiceHandler) GetInvoice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	log.Printf("Recebendo requisição para invoice ID: %v", vars["id"])
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid invoice ID", http.StatusBadRequest)
@@ -75,6 +77,7 @@ func (h *InvoiceHandler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 
 func (h *InvoiceHandler) AddInvoiceItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	log.Printf("Recebendo requisição para invoice ID: %v", vars["id"])
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid invoice ID", http.StatusBadRequest)
@@ -111,6 +114,7 @@ func (h *InvoiceHandler) AddInvoiceItem(w http.ResponseWriter, r *http.Request) 
 
 func (h *InvoiceHandler) PrintInvoice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	log.Printf("Recebendo requisição para invoice ID: %v", vars["id"])
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid invoice ID", http.StatusBadRequest)

@@ -2,6 +2,7 @@ package invoice
 
 import (
 	"errors"
+	"log"
 	"time"
 )
 
@@ -54,10 +55,12 @@ func (i *Invoice) AddItem(productID int, quantity int, price float64, name strin
 		Price:     price,
 		Name:      name,
 	}
+	log.Printf("Adicionando item ao invoice: %v", item)
 
 	i.Items = append(i.Items, item)
-	i.calculateTotal()
 
+	i.CalculateTotal()
+	log.Printf("Item %d adicionado ao invoice %d", item.ID, i.ID)
 	return item
 }
 
@@ -76,8 +79,8 @@ func (i *Invoice) Close() error {
 
 	return nil
 }
-func (i *Invoice) calculateTotal() {
-	var total float64
+func (i *Invoice) CalculateTotal() {
+	total := 0.0
 	for _, item := range i.Items {
 		total += float64(item.Quantity) * item.Price
 	}

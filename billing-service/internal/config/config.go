@@ -32,6 +32,7 @@ func Load() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Aviso: .env não encontrado, usando variáveis do ambiente")
+		log.Println("INVENTORY_SERVICE_URL:", viper.GetString("INVENTORY_SERVICE_URL"))
 	}
 	viper.AutomaticEnv()
 	viper.SetDefault("DB_HOST", "billing-db")
@@ -55,5 +56,6 @@ func Load() (*Config, error) {
 			ReadTimeout:  15,
 			WriteTimeout: 15,
 		},
+		InventoryServiceURL: viper.GetString("INVENTORY_SERVICE_URL"),
 	}, nil
 }

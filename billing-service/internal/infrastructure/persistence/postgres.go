@@ -22,7 +22,6 @@ func (r *PostgresRepository) Create(ctx context.Context, inv *invoice.Invoice) e
 	}
 	defer tx.Rollback()
 
-	// Insert invoice
 	query := `
         INSERT INTO invoices (number, status, created_at, total_value)
         VALUES ($1, $2, $3, $4)
@@ -36,7 +35,6 @@ func (r *PostgresRepository) Create(ctx context.Context, inv *invoice.Invoice) e
 		return err
 	}
 
-	// Insert items
 	for _, item := range inv.Items {
 		item.InvoiceID = inv.ID
 		query := `
@@ -57,7 +55,6 @@ func (r *PostgresRepository) Create(ctx context.Context, inv *invoice.Invoice) e
 }
 
 func (r *PostgresRepository) GetByID(ctx context.Context, id int) (*invoice.Invoice, error) {
-	// Get invoice
 	invQuery := `
         SELECT id, number, status, created_at, closed_at, total_value
         FROM invoices 
@@ -76,7 +73,6 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id int) (*invoice.Invo
 		return nil, err
 	}
 
-	// Get items
 	itemsQuery := `
         SELECT id, product_id, quantity, price, name
         FROM invoice_items
@@ -96,7 +92,7 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id int) (*invoice.Invo
 		}
 		inv.Items = append(inv.Items, item)
 	}
-
+	inv.CalculateTotal()
 	return inv, nil
 }
 
@@ -111,6 +107,40 @@ func (r *PostgresRepository) Update(ctx context.Context, inv *invoice.Invoice) e
 	)
 
 	return err
+}
+func (r *PostgresRepository) AddItem(ctx context.Context, item *invoice.InvoiceItem) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	itemQuery := `
+        INSERT INTO invoice_items (invoice_id, product_id, quantity, price, name)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id`
+
+	err = tx.QueryRowContext(ctx, itemQuery,
+		item.InvoiceID, item.ProductID, item.Quantity, item.Price, item.Name,
+	).Scan(&item.ID)
+
+	if err != nil {
+		return err
+	}
+
+	updateQuery := `
+        UPDATE invoices 
+		SET total_value = total_value + CAST($1 AS numeric) * CAST($2 AS numeric)
+        WHERE id = $3`
+
+	_, err = tx.ExecContext(ctx, updateQuery,
+		item.Quantity, item.Price, item.InvoiceID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *PostgresRepository) List(ctx context.Context) ([]*invoice.Invoice, error) {
