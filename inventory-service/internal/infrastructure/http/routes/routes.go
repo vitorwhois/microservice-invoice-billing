@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"inventory-service/internal/infrastructure/http/handlers"
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/infrastructure/http/handlers"
 
 	"github.com/gorilla/mux"
 )

@@ -1,0 +1,33 @@
+# Binaries gerados pelo Go
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Arquivo de teste gerado pelo comando "go test -c"
+*.test
+
+# Arquivo de cobertura
+*.out
+
+# Diretório de dependências
+vendor/
+
+# Arquivos e diretórios de IDEs/editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários e logs
+*.log
+
+# Configurações locais ou sensíveis
+.env
+
+# Arquivos gerados pelo Docker
+docker-compose.override.yml

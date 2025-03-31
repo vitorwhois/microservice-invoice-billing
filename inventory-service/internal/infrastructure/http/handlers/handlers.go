@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"inventory-service/internal/application/product"
 	"net/http"
 	"strconv"
+
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/application/product"
 
 	"github.com/gorilla/mux"
 )

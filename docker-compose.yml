@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  inventory-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inventory
+    ports:
+      - '5432:5432'
+    volumes:
+      - inventory-data:/var/lib/postgresql/data
+      - ./inventory-service/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  billing-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: billing
+    ports:
+      - '5433:5432'
+    volumes:
+      - billing-data:/var/lib/postgresql/data
+      - ./billing-service/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: inventory-db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: inventory
+      PORT: 8080
+    ports:
+      - '8080:8080'
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+
+  billing-service:
+    build:
+      context: ./billing-service
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: billing-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: billing
+      PORT: 8081
+    ports:
+      - '8081:8081'
+    depends_on:
+      billing-db:
+        condition: service_healthy
+
+volumes:
+  inventory-data:
+  billing-data:

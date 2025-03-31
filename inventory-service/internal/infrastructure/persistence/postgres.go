@@ -3,7 +3,8 @@ package persistence
 import (
 	"context"
 	"database/sql"
-	"inventory-service/internal/domain/product"
+
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/domain/product"
 )
 
 type PostgresRepository struct {

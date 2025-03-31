@@ -2,7 +2,8 @@ package product
 
 import (
 	"context"
-	"inventory-service/internal/domain/product"
+
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/domain/product"
 )
 
 type Service struct {

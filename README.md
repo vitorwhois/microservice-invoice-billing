@@ -69,6 +69,7 @@ Microsserviço para gestão de produtos e emissão de notas fiscais com controle
 │   ├──cmd/
 │   └── main.go                
 ├──internal/
+│   ├── config/
 │   ├──domain/
 │   │   └──product/             
 │   │       ├── product.go       
@@ -93,13 +94,12 @@ Microsserviço para gestão de produtos e emissão de notas fiscais com controle
 - Docker e Docker Compose
 - Gorilla Mux
 
-## 📋 Requisitos
+## Requisitos
 
 - Go 1.19+
 - Docker e Docker Compose
 - PostgreSQL 13+
 
-## ⚙️ Configuração
 
 ### 1. Clonar repositório
 ```bash

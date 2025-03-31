@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"inventory-service/internal/application/product"
-	"inventory-service/internal/config"
-	"inventory-service/internal/infrastructure/http/handlers"
-	"inventory-service/internal/infrastructure/http/routes"
-	"inventory-service/internal/infrastructure/persistence"
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/application/product"
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/config"
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/infrastructure/http/handlers"
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/infrastructure/http/routes"
+	"github.com/vitorwhois/microservice-invoice-billing/inventory-service/internal/infrastructure/persistence"
 
 	_ "github.com/lib/pq"
 )
