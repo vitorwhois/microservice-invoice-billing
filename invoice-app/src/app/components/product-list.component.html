@@ -1,16 +1,29 @@
-<div class="product-form">
+<div class="form-card">
   <h3>Cadastrar Produto</h3>
-  <input type="text" [(ngModel)]="newProduct.name" placeholder="Nome do produto">
-  <input type="number" [(ngModel)]="newProduct.price" placeholder="Preço">
-  <input type="number" [(ngModel)]="newProduct.stock" placeholder="Estoque">
+
+  <div class="form-group">
+    <label for="name">Nome:</label>
+    <input id="name" type="text" [(ngModel)]="newProduct.name" placeholder="Nome do produto">
+  </div>
+
+  <div class="form-group">
+    <label for="price">Preço:</label>
+    <input id="price" type="number" [(ngModel)]="newProduct.price" placeholder="Preço">
+  </div>
+
+  <div class="form-group">
+    <label for="stock">Quantidade:</label>
+    <input id="stock" type="number" [(ngModel)]="newProduct.stock" placeholder="Estoque">
+  </div>
+
   <button (click)="createProduct()">Criar Produto</button>
 </div>
 
-<div>
+<div class="form-card">
   <h2>Lista de Produtos</h2>
   <ul>
     <li *ngFor="let product of products">
-      {{ product.Name }} - Preço: {{ product.Price }} - Estoque: {{ product.Stock }} - ID: {{ product.ID }}
+      {{ product.Name }} - Preço: {{ product.Price | currency }} - Estoque: {{ product.Stock }} - ID: {{ product.ID }} - Reservados: {{ product.ReservedStock }}
     </li>
   </ul>
 </div>

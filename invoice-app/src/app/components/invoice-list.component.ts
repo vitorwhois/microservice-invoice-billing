@@ -1,5 +1,6 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { BillingService } from '../services/billing.service';
+import { InventoryService } from '../services/inventory.services';
 
 @Component({
   selector: 'app-invoice-list',
@@ -17,10 +18,11 @@ export class InvoiceListComponent implements OnInit {
 
   @Output() invoiceSelected = new EventEmitter<any>();
 
-  constructor(private billingService: BillingService) { }
+  constructor(private billingService: BillingService, private inventoryService: InventoryService) { }
 
   ngOnInit(): void {
     this.loadInvoices();
+
   }
 
   loadInvoices(): void {
@@ -62,6 +64,7 @@ export class InvoiceListComponent implements OnInit {
         alert('Item adicionado com sucesso!');
         this.showModal = false;
         this.loadInvoices();
+        this.inventoryService.getAllProducts();
       },
       error: (err) => alert('Erro ao adicionar item: ' + err.error)
     });
@@ -78,8 +81,5 @@ export class InvoiceListComponent implements OnInit {
   openAddItemModal(invoiceId: number): void {
     this.selectedInvoiceId = invoiceId;
     this.showModal = true;
-  }
-  formatItems(items: any[]): string {
-    return items.map(item => `${item.Name} (Qtd: ${item.Quantity}, Preço: ${item.Price})`).join(', ');
   }
 }

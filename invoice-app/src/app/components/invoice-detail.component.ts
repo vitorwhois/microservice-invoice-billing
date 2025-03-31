@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { BillingService } from '../services/billing.service';
+import { InventoryService } from '../services/inventory.services';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -9,7 +10,7 @@ export class InvoiceDetailComponent {
   @Input() invoice: any;
   newItem = { productId: 0, quantity: 0 };
 
-  constructor(private billingService: BillingService) { }
+  constructor(private billingService: BillingService, private inventoryService: InventoryService) { }
 
   addItem() {
     if (!this.newItem.productId || !this.newItem.quantity) {
@@ -29,6 +30,7 @@ export class InvoiceDetailComponent {
         next: (response) => {
           alert('Nota impressa com sucesso!');
           this.loadInvoice();
+          this.inventoryService.getAllProducts();
         },
         error: (err) => alert('Erro ao imprimir: ' + err.error)
       });

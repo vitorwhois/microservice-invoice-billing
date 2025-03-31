@@ -1,9 +1,10 @@
-<div>
+<div class="form-card">
   <h3>Criar Nota Fiscal</h3>
   <input type="text" [(ngModel)]="newInvoiceNumber" placeholder="Número da nota">
   <button (click)="createInvoice()">Criar Nota</button>
 </div>
 
+<div class="form-card">
 <h2>Listagem de Notas</h2>
 <ul>
   <li *ngFor="let invoice of invoices">
@@ -11,6 +12,9 @@
     <button (click)="openAddItemModal(invoice.ID)">Adicionar Item</button>
   </li>
 </ul>
+
+</div>
+
 
 <div *ngIf="showModal" class="modal">
   <div class="modal-content">
@@ -24,7 +28,7 @@
   </div>
 </div>
 
-<div>
+<div class="form-card">
   <h3>Listagem de Notas para confirmar</h3>
   <ul>
     <li *ngFor="let invoice of invoices">
